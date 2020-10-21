@@ -12,15 +12,26 @@
                  v-for="(answer, index) in answers"
                  :key="index"
                  @click="selectAnswer(index)"
-                 :class="[selectedIndex === index ? 'selected' : '' ]"
+                 :class="answerClass(index)"
                 >
                     {{ answer }}
                 </b-list-group-item>
             </b-list-group>
            
 
-            <b-button  variant="primary" href="#">Submit</b-button>
-            <b-button @click="next" variant="success" href="#">Next</b-button>
+            <b-button 
+                @click="submitAnswer" 
+                :disabled="selectedIndex === null || answered"
+                variant="primary" 
+            >
+                Submit    
+            </b-button>
+            <b-button 
+                @click="next" 
+                variant="success"    
+            >
+                Next
+            </b-button>
         </b-jumbotron>
     </div>
 </template>
@@ -30,12 +41,15 @@ import lodash from "lodash"
 export default {
     props: {
         currentQuestion: Object,
-        next: Function
+        next: Function,
+        increment: Function
     },
     data: function(){
         return {
             selectedIndex: null,
-            shuffledAnswers: []
+            correctIndex: null,
+            shuffledAnswers: [],
+            answered: false
         }
     },
     computed: {
@@ -48,6 +62,7 @@ export default {
     watch: {
       currentQuestion() {
           this.selectedIndex = null
+          this.answered = false
           this.shuffleAnswer()
       }  
     },
@@ -58,6 +73,28 @@ export default {
         shuffleAnswer() {
             let answers = [...this.currentQuestion.incorrect_answers, this.currentQuestion.correct_answer]
             this.shuffledAnswers = lodash.shuffle(answers)
+            this.correctIndex = this.shuffledAnswers.indexOf(this.currentQuestion.correct_answer)
+       },
+       submitAnswer(){
+           let isCorrect = false
+
+           if(this.selectedIndex === this.correctIndex) {
+               isCorrect = true
+           }
+           this.answered = true
+
+           this.increment(isCorrect)
+       },
+       answerClass(index){
+           let answerClass = ''
+           if (!this.answered && this.selectedIndex === index){
+               answerClass = 'selected'
+           } else if (this.answered && this.selectedIndex === index && this.correctIndex !== index){
+               answerClass = 'incorrect'
+           } else if (this.answered && this.correctIndex === index ) {
+               answerClass = 'correct'
+           }
+           return answerClass
        }
     },
     mounted() {
@@ -70,6 +107,10 @@ export default {
     .list-group {
         margin-bottom: 15px;
     }
+    .list-group-item:hover{
+        background: #eee;
+        cursor: pointer;
+    }
 
     .btn {
         margin: 0 5px;
@@ -80,10 +121,10 @@ export default {
     }
 
     .incorrect {
-        background: lightred;    
+        background: red;    
     }
 
     .correct {
-        background: green;
+        background: lightgreen;
     }
 </style>
